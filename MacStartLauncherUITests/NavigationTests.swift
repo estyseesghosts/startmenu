@@ -15,7 +15,7 @@ final class NavigationTests: XCTestCase {
     }
 
     func testSearchingForUnknownApplicationShowsEmptyState() {
-        let field = app.textFields["Search apps"]
+        let field = app.searchFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.click()
         field.typeText("zzzz-definitely-not-installed")
@@ -24,7 +24,7 @@ final class NavigationTests: XCTestCase {
     }
 
     func testEscapeClearsSearchBeforeDismissing() {
-        let field = app.textFields["Search apps"]
+        let field = app.searchFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.click()
         field.typeText("zzzz-definitely-not-installed")

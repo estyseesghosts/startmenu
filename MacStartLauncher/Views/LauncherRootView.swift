@@ -1,25 +1,34 @@
 import SwiftUI
 
-/// The root Liquid Glass surface that combines the left and right panes.
+/// The launcher's root: three independently floating Liquid Glass surfaces.
+///
+/// There is no outer launcher rectangle and no divider. A single
+/// `GlassEffectContainer` renders the app grid, the search field, and the files
+/// pane together while keeping them visually separate.
 struct LauncherRootView: View {
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            AppPaneView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.trailing, 16)
+        GlassEffectContainer(spacing: 8) {
+            HStack(alignment: .bottom, spacing: 12) {
+                VStack(spacing: 12) {
+                    AppPaneView()
+                        .padding(18)
+                        .glassSurface(cornerRadius: 28)
 
-            Divider()
-                .overlay(Color.primary.opacity(0.06))
+                    LauncherSearchField()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .glassSurface(cornerRadius: 18)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-            FolderPaneView()
-                .frame(width: 240)
-                .padding(.leading, 16)
+                FolderPaneView()
+                    .padding(16)
+                    .frame(width: 240)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .glassSurface(cornerRadius: 28)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .glassLauncherBackground()
-        .padding(14)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.clear)
     }
 }

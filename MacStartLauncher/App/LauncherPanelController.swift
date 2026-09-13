@@ -9,6 +9,18 @@ enum LauncherKeyCommand {
     case down
     case left
     case right
+
+    static func from(event: NSEvent) -> Self? {
+        switch event.keyCode {
+        case 53: return .escape
+        case 36, 76: return .submit
+        case 123: return .left
+        case 124: return .right
+        case 125: return .down
+        case 126: return .up
+        default: return nil
+        }
+    }
 }
 
 /// A borderless panel that can become key so the search field works.
@@ -21,7 +33,7 @@ final class LauncherPanel: NSPanel {
     override var canBecomeMain: Bool { allowsMainWindow }
 
     override func keyDown(with event: NSEvent) {
-        if let command = Self.command(for: event), keyCommandHandler?(command) == true {
+        if let command = LauncherKeyCommand.from(event: event), keyCommandHandler?(command) == true {
             return
         }
         super.keyDown(with: event)
@@ -29,18 +41,6 @@ final class LauncherPanel: NSPanel {
 
     override func cancelOperation(_ sender: Any?) {
         _ = keyCommandHandler?(.escape)
-    }
-
-    private static func command(for event: NSEvent) -> LauncherKeyCommand? {
-        switch event.keyCode {
-        case 53: return .escape
-        case 36, 76: return .submit
-        case 123: return .left
-        case 124: return .right
-        case 125: return .down
-        case 126: return .up
-        default: return nil
-        }
     }
 }
 
@@ -59,9 +59,11 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
     private let isUITesting: Bool
 
     private var previousApplication: NSRunningApplication?
-    private var localMonitor: Any?
     private var globalMonitor: Any?
     private var activationObserver: NSObjectProtocol?
+
+    /// Whether the launcher panel is currently on screen.
+    var isVisible: Bool { panel.isVisible }
 
     init(environment: AppEnvironment) {
         let isUITesting = ProcessInfo.processInfo.arguments.contains("-uiTesting")
@@ -103,6 +105,16 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
         panel.keyCommandHandler = { [weak environment] command in
             environment?.launcher.handle(command)
             return true
+        }
+
+        // Launching an application or opening a folder asks the controller to
+        // dismiss the launcher. This keeps the internal controls (categories,
+        // pin/unpin, folder picker) from ever closing the window by accident.
+        environment.launcher.requestClose = { [weak self] in
+            self?.hide()
+        }
+        environment.folders.requestClose = { [weak self] in
+            self?.hide()
         }
     }
 
@@ -167,32 +179,24 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
         removeEventMonitors()
         guard !isUITesting else { return }
 
-        localMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: [.leftMouseDown, .rightMouseDown]
-        ) { [weak self] event in
-            guard let self else { return event }
-            if event.window !== self.panel, NSApp.modalWindow == nil {
-                self.hide()
-            }
-            return event
-        }
-
+        // A global monitor only sees events delivered to *other* applications.
+        // That is exactly the behavior we want for "click outside to dismiss":
+        // clicks on the launcher's own controls are never intercepted, so the
+        // panel can no longer close itself while an internal button is used.
         globalMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown]
         ) { [weak self] _ in
-            guard NSApp.modalWindow == nil else { return }
-            self?.hide()
+            Task { @MainActor in
+                guard NSApp.modalWindow == nil else { return }
+                self?.hide()
+            }
         }
     }
 
     private func removeEventMonitors() {
-        if let localMonitor {
-            NSEvent.removeMonitor(localMonitor)
-        }
         if let globalMonitor {
             NSEvent.removeMonitor(globalMonitor)
         }
-        localMonitor = nil
         globalMonitor = nil
     }
 
@@ -209,7 +213,9 @@ final class LauncherPanelController: NSObject, NSWindowDelegate {
                 return
             }
             if application.bundleIdentifier != Bundle.main.bundleIdentifier {
-                self.hide()
+                Task { @MainActor in
+                    self.hide()
+                }
             }
         }
     }

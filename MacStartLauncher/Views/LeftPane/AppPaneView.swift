@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The left pane: pinned applications, category folders, category contents,
-/// search results, and the search field.
+/// and search results. The search field is a separate sibling surface.
 struct AppPaneView: View {
     @Environment(AppEnvironment.self) private var environment
 
@@ -11,8 +11,6 @@ struct AppPaneView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             content
-            LauncherSearchField()
-                .padding(.top, 12)
         }
     }
 

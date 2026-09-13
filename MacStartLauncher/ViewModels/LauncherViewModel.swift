@@ -106,6 +106,13 @@ final class LauncherViewModel {
         load()
     }
 
+    /// Reloads the persisted pin list after an external settings change, such
+    /// as an import, without rescanning installed applications.
+    func reloadPreferences() {
+        pinnedBundleIdentifiers = preferencesStore.load().pinnedBundleIdentifiers
+        rebuildEntries()
+    }
+
     private func removeStalePins() {
         let knownIdentifiers = Set(applications.map(\.id))
         let cleaned = pinnedBundleIdentifiers.filter { knownIdentifiers.contains($0) }

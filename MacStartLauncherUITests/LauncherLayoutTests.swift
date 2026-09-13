@@ -15,7 +15,7 @@ final class LauncherLayoutTests: XCTestCase {
     }
 
     func testLauncherShowsSearchField() {
-        XCTAssertTrue(app.textFields["Search apps"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 10))
     }
 
     func testLauncherShowsAddFolderButton() {

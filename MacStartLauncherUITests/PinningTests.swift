@@ -15,7 +15,7 @@ final class PinningTests: XCTestCase {
     }
 
     func testApplicationContextMenuOffersPinOrUnpin() throws {
-        let field = app.textFields["Search apps"]
+        let field = app.searchFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.click()
         field.typeText("Safari")

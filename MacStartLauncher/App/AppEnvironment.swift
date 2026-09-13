@@ -9,6 +9,9 @@ final class AppEnvironment {
     let iconService: ApplicationIconService
     let launcher: LauncherViewModel
     let folders: FolderShortcutsViewModel
+    let preferencesStore: PreferencesStore
+    let folderService: FolderService
+    let settingsTransfer: SettingsTransferService
     private let changeMonitor: ApplicationChangeMonitor
 
     init() {
@@ -32,6 +35,12 @@ final class AppEnvironment {
         self.iconService = ApplicationIconService()
         self.launcher = launcher
         self.folders = folders
+        self.preferencesStore = preferencesStore
+        self.folderService = folderService
+        self.settingsTransfer = SettingsTransferService(
+            preferencesStore: preferencesStore,
+            folderService: folderService
+        )
         self.changeMonitor = ApplicationChangeMonitor { [weak launcher] in
             launcher?.refresh()
         }
@@ -45,5 +54,11 @@ final class AppEnvironment {
 
     func refreshApplications() {
         launcher.refresh()
+    }
+
+    /// Reloads both panes after a settings import has persisted a new layout.
+    func reloadFromPreferences() {
+        launcher.reloadPreferences()
+        folders.reloadCustomShortcuts()
     }
 }

@@ -11,6 +11,9 @@ final class FolderShortcutsViewModel {
     let standardShortcuts: [FolderShortcut]
     private(set) var customShortcuts: [FolderShortcut] = []
 
+    /// Invoked after a folder is handed to Finder so the launcher can dismiss.
+    var requestClose: (() -> Void)?
+
     var allShortcuts: [FolderShortcut] {
         standardShortcuts + customShortcuts
     }
@@ -32,6 +35,7 @@ final class FolderShortcutsViewModel {
 
     func open(_ shortcut: FolderShortcut) {
         service.open(shortcut)
+        requestClose?()
     }
 
     func reveal(_ shortcut: FolderShortcut) {
@@ -88,6 +92,12 @@ final class FolderShortcutsViewModel {
             customShortcuts = refreshed
             persist()
         }
+    }
+
+    /// Reloads the custom shortcuts after an import has persisted a new layout.
+    func reloadCustomShortcuts() {
+        customShortcuts = preferencesStore.load().additionalFolders
+        refreshCustomShortcuts()
     }
 
     private func persist() {
